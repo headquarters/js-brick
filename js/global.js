@@ -5,8 +5,7 @@ var CANVASWIDTH = 800,
 	
 var backgroundColors = ['#E54661', '#FFA644', '#998A2F', '#2C594F', '#002D40'],
 	colors = ['#61571E', '#A86E2D', '#19332D', '#872939', '#003045'],
-	bricks = [],
-	brickNodes = [],
+	bricks = {},
 	x = 0,
 	y = 0,
 	row = 1,
@@ -26,8 +25,9 @@ for(var i = 1; i <= 60; i++)
 	brick = paper.rect(x, y, BRICKWIDTH, BRICKHEIGHT);
 	brick.attr({fill: backgroundColors[rand], stroke: colors[rand], "fill-opacity": 1, "stroke-width": 1});
 	
-	bricks.push(brick);
-	brickNodes.push(brick.node);
+	var brickID = "brickId"+i;
+	brick.node.id = brickID;
+	bricks[brickID] = brick;
 	
 	//calculate next x position	
 	x = (column * BRICKWIDTH);
@@ -43,12 +43,6 @@ for(var i = 1; i <= 60; i++)
 		x = 0,
 		column = 1;
 	}	
-}
-
-var destroy = function(obj)
-{
-	obj.animate({ "fill-opacity":0, "stroke-opacity":0, width:BRICKWIDTH*2, height:BRICKHEIGHT*2 }, 500, function(){ this.remove(); });
-
 }
 
 
@@ -67,20 +61,21 @@ ball.onAnimation(
 		{
 			this.stop();
 			
-			//get Raphael reference to current node
-			for(var j = 0; j < brickNodes.length; j++)
-			{
-				if(brickNodes[j] == elementOnTop)
-				{
-					//destroy the brick that was struck
-					destroy(bricks[j]);
-					
+			console.log(elementOnTop.id);
+			
+			//destroy(bricks[elementOnTop.id]);
+			bricks[elementOnTop.id].animate({ "fill-opacity":0, "stroke-opacity":0, width:BRICKWIDTH*2, height:BRICKHEIGHT*2 }, 500, 
+				function()
+				{ 
+					this.remove(); 
+							
 					//send ball back in opposite direction
 					angle += 45; 
 					
 					ball.animate({cx: 400, cy: 100}, 1000);
 				}
-			}
+			);
+			
 		}
 	}
 );
