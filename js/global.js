@@ -18,8 +18,7 @@ var backgroundColors = ['#E54661', '#FFA644', '#998A2F', '#2C594F', '#002D40'],
 
 	ball.attr({fill: 'red', stroke: '#aaa', "fill-opacity": 1, "stroke-width": 1});
 
-for(var i = 1; i <= 60; i++)
-{
+for(var i = 1; i <= 60; i++){
 	rand = Math.floor(Math.random() * backgroundColors.length);
 		
 	brick = paper.rect(x, y, BRICKWIDTH, BRICKHEIGHT);
@@ -33,8 +32,7 @@ for(var i = 1; i <= 60; i++)
 	x = (column * BRICKWIDTH);
 	column++;
 	
-	if(x >= CANVASWIDTH)
-	{
+	if(x >= CANVASWIDTH){
 		//move bricks down
 		y = row * BRICKHEIGHT;
 		row++;
@@ -53,20 +51,17 @@ var angle = Raphael.angle(ball.attr("cx"), ball.attr("cy"), 400, 20);
 //console.log("angle: " + angle);
 
 ball.onAnimation(
-	function()
-	{
+	function(){
 		var elementOnTop = document.elementFromPoint(this.attr("cx"), this.attr("cy"));
 
-		if(elementOnTop !== null && elementOnTop != this.node)
-		{
+		if(elementOnTop !== null && elementOnTop != this.node){
 			this.stop();
 			
 			console.log(elementOnTop.id);
 			
 			//destroy(bricks[elementOnTop.id]);
 			bricks[elementOnTop.id].animate({ "fill-opacity":0, "stroke-opacity":0, width:BRICKWIDTH*2, height:BRICKHEIGHT*2 }, 500, 
-				function()
-				{ 
+				function(){ 
 					this.remove(); 
 							
 					//send ball back in opposite direction
