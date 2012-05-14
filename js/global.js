@@ -14,10 +14,11 @@ var backgroundColors = ['#E54661', '#FFA644', '#998A2F', '#2C594F', '#002D40'],
 	rand,
 	path,
 	paper = Raphael(document.getElementById('container'), CANVASWIDTH, CANVASHEIGHT),
-	ball = paper.circle(400, 100, 12);
+	ball = paper.circle(CANVASWIDTH / 2, CANVASHEIGHT - 100, 12);
 
 	ball.attr({fill: 'red', stroke: '#aaa', "fill-opacity": 1, "stroke-width": 1});
 
+//build the brick layers
 for(var i = 1; i <= 60; i++){
 	rand = Math.floor(Math.random() * backgroundColors.length);
 		
@@ -38,13 +39,13 @@ for(var i = 1; i <= 60; i++){
 		row++;
 		
 		//reset x for new layer
-		x = 0,
+		x = 0;
 		column = 1;
 	}	
 }
 
-
-ball.animate({cx: 400, cy: 50}, 1000);
+//kick off ball animation towards bricks
+ball.animate({cx: 400, cy: 0}, 1000);
 
 var angle = Raphael.angle(ball.attr("cx"), ball.attr("cy"), 400, 20);
 
@@ -52,6 +53,7 @@ var angle = Raphael.angle(ball.attr("cx"), ball.attr("cy"), 400, 20);
 
 ball.onAnimation(
 	function(){
+		//spotty "collision detection" only supported in some newer browsers
 		var elementOnTop = document.elementFromPoint(this.attr("cx"), this.attr("cy"));
 
 		if(elementOnTop !== null && elementOnTop != this.node){
@@ -59,17 +61,18 @@ ball.onAnimation(
 			
 			console.log(elementOnTop.id);
 			
-			//destroy(bricks[elementOnTop.id]);
-			bricks[elementOnTop.id].animate({ "fill-opacity":0, "stroke-opacity":0, width:BRICKWIDTH*2, height:BRICKHEIGHT*2 }, 500, 
+			bricks[elementOnTop.id].remove();
+										
+			/*bricks[elementOnTop.id].animate({ "fill-opacity":0, "stroke-opacity":0, width:BRICKWIDTH*2, height:BRICKHEIGHT*2 }, 500, 
 				function(){ 
 					this.remove(); 
-							
-					//send ball back in opposite direction
-					angle += 45; 
-					
-					ball.animate({cx: 400, cy: 100}, 1000);
 				}
-			);
+			);*/
+			
+			//send ball back in opposite direction
+			angle += 45; 
+					
+			ball.animate({cx: 400, cy: 400}, 1000);
 			
 		}
 	}
