@@ -1,106 +1,175 @@
-var CANVASWIDTH = 800,
-	CANVASHEIGHT = 600,
-	BRICKWIDTH = 40,
-	BRICKHEIGHT = 20,
-	PADDLEWIDTH = 80,
-	PADDLEHEIGHT = 10;
+/**
+ * TODO:
+ * -mouse movement, keyboard control, and touch control on the paddle the paddle
+ * -pause (wow, that sounds difficult)
+ * -opening screen
+ * -keeping score
+ * -lives/chances...maybe infinite lives, every time you die the ball gets slower, as you go from level to level it increases in speed
+ * -less garish colors for bricks
+ */
+var Game = (function(){
+	var module = {};
+	var canvas;
+	var ball;
+	var bricks;
+	var paddle;
+	var ballAnimationTime = 1500;
 	
-var backgroundColors = ['#E54661', '#FFA644', '#998A2F', '#2C594F', '#002D40'],
-	colors = ['#61571E', '#A86E2D', '#19332D', '#872939', '#003045'],
-	bricks = {},
-	x = 0,
-	y = 0,
-	row = 1,
-	column = 1,
-	brick,
-	rand,
-	path,
-	paper = Raphael(document.getElementById('container'), CANVASWIDTH, CANVASHEIGHT),
-	ball = paper.circle(CANVASWIDTH / 2, CANVASHEIGHT - 100, 12);
-
-	ball.attr({fill: 'red', stroke: '#aaa', "fill-opacity": 1, "stroke-width": 1});
-
-var paddle = paper.rect((CANVASWIDTH/2 - PADDLEWIDTH), (CANVASHEIGHT - (PADDLEHEIGHT * 3)), 100, 20);
-paddle.attr({ fill: "#CCCCCC" });
-
-//build the brick layers
-for(var i = 1; i <= 60; i++){
-	rand = Math.floor(Math.random() * backgroundColors.length);
+	//borrowed from github project
+	/*function rectangleIntersectsCircle(theRectangle, theCircle) {
+		var distanceX = Math.abs(theCircle.attr('cx') - theRectangle.attr('x') - theRectangle.attr('width')/2);
+		var distanceY = Math.abs(theCircle.attr('cy') - theRectangle.attr('y') - theRectangle.attr('height')/2);
+	
+		if (distanceX > (theRectangle.attr('width')/2 + theCircle.attr('r'))) { return false; }
+		if (distanceY > (theRectangle.attr('height')/2 + theCircle.attr('r'))) { return false; }
+	
+		if (distanceX <= (theRectangle.attr('width')/2)) { return true; } 
+		if (distanceY <= (theRectangle.attr('height')/2)) { return true; } 
+	
+		var cornerDistance_sq = Math.pow((distanceX - theRectangle.attr('width')/2), 2) +
+								Math.pow((distanceY - theRectangle.attr('height')/2), 2);
+	
+		return (cornerDistance_sq <= Math.pow(theCircle.r, 2));
+	}*/
+	
+	function isCircleCenterInsideRectangle(circle, rectangle) {
+		return (circle.attr('cx') >= rectangle.attr('x')
+				&& circle.attr('cx') < (rectangle.attr('x') + rectangle.attr('width'))
+				&& circle.attr('cy') >= rectangle.attr('y')
+				&& circle.attr('cy') < (rectangle.attr('y') + rectangle.attr('height')));
+	}
+	
+	
+	module.run = function(){
+		Game.Canvas.create();
 		
-	brick = paper.rect(x, y, BRICKWIDTH, BRICKHEIGHT);
-	brick.attr({fill: backgroundColors[rand], stroke: colors[rand], "fill-opacity": 1, "stroke-width": 1});
-	
-	var brickID = "brickId"+i;
-	brick.node.id = brickID;
-	bricks[brickID] = brick;
-	
-	//calculate next x position	
-	x = (column * BRICKWIDTH);
-	column++;
-	
-	if(x >= CANVASWIDTH){
-		//move bricks down
-		y = row * BRICKHEIGHT;
-		row++;
+		ball = Game.Canvas.paper.circle(Game.Canvas.width / 2, Game.Canvas.height - 45, 12);
+		ball.attr({fill: 'red', stroke: '#666', "fill-opacity": 1, "stroke-width": 2});
 		
-		//reset x for new layer
-		x = 0;
-		column = 1;
-	}	
-}
-
-//kick off ball animation towards bricks
-ball.animate({cx: 400, cy: 0}, 1500);
-
-var angle = Raphael.angle(ball.attr("cx"), ball.attr("cy"), 400, 20);
-
-//console.log("angle: " + angle);
-
-ball.onAnimation(
-	function(){
-		//spotty "collision detection" only supported in some newer browsers
-		//var elementOnTop = document.elementFromPoint(this.attr("cx"), this.attr("cy"));
-		var elementsAtCurrentPoint = paper.getElementsByPoint(this.attr("cx"), this.attr("cy"));
-
-		if(elementsAtCurrentPoint.length  === 0 || (elementsAtCurrentPoint.length === 1 && elementsAtCurrentPoint[0].node === this.node)){
-			return;
-		} else {
-			this.stop();
-			//elementsAtCurrentPoint.length != 1 || [0].node != this.node
-			for(var i = 0; i < elementsAtCurrentPoint.length; i++){
-				elementsAtCurrentPoint[0].animate({ "fill-opacity":0, "stroke-opacity":0, width:BRICKWIDTH*2, height:BRICKHEIGHT*2 }, 500, 
-					function(){ 
-						this.remove(); 
-					}
-				);
-			}
-			console.log(elementsAtCurrentPoint);
+		paddle = Game.Canvas.paper.rect((Game.Canvas.width/2 - 80), (Game.Canvas.height - (10 * 3)), 100, 20);
+		paddle.attr({ fill: "#CCCCCC" });
+		
+		bricks = Game.Canvas.placeBricks();
+		
+		module.startBall();
+	};
+	
+	module.startBall = function(){
+		ball.animate({cx: 400, cy: 0}, ballAnimationTime);
+		
+		var angle = Raphael.angle(ball.attr("cx"), ball.attr("cy"), 400, 20);
+		
+		var flag;
+		
+		//crude hit detection
+		ball.onAnimation(
+			function(){
+				//getElementsByPoint() slows the animation down a LOT
+				//var elementsAtCurrentPoint = Game.Canvas.paper.getElementsByPoint(this.attr("cx"), this.attr("cy"));
+				
+				//cx and cy are point in center of circle...needs to be checking edge of circle
+				var cx = this.attr("cx");
+				var cy = this.attr("cy");
+				
 			
-			//send ball back in opposite direction
-			angle += 45; 
+				//looping over every brick also slows the animation down a LOT,
+				//but manual calculation is perceptually faster than calling isPointInside()
+				for(var brick in bricks){
+					flag = isCircleCenterInsideRectangle(this, bricks[brick]);
+					
+					if (flag) {
+						//circle has hit a brick
+						bricks[brick].animate({ "fill-opacity":0, "stroke-opacity":0, width:80, height:40 }, 500, 
+							function(){ 
+								this.remove(); 
+							}
+						);
+						
+						angle += 45;
+						
+						//shouldn't animation time frame depend on length of distance to cover?
+						//i.e. increase timespan for animate as length increases so speed remains constant
+						ball.animate({cx: 400, cy: Game.Canvas.height}, ballAnimationTime);
+						//ball.stop();
+					} 
+				}
+				
+				//if ball hits paddle, return in opposite direction...
+				
+				//if bricks are empty, game is won...
+				
+				//if ball hits bottom of canvas, user loses a life...or something happens...
+			}
+		);
+	};
+	
+	return module;	
+})();
 
-			ball.animate({cx: 400, cy: 400}, 1000);
+Game.Canvas = (function(){
+	var module = {};
+	
+	var backgroundColors = ['#E54661', '#FFA644', '#998A2F', '#2C594F', '#002D40'];
+	//var colors = ['#61571E', '#A86E2D', '#19332D', '#872939', '#003045'];
+	
+	var brickWidth = 40;
+	var brickHeight = 20;
+	
+	//initial brick position
+	var x = 0;
+	var y = 0;
+	var row = 1;
+	var column = 1;
+	
+	var rand;
+	
+	module.width = 800;
+	module.height = 600;
+	
+	module.create = function(){
+		module.paper = Raphael(document.getElementById('container'), module.width, module.height);		
+	};
+	
+	module.placeBricks = function(){
+		var bricks = [];
+		
+		for(var i = 1; i <= 60; i++){
+			rand = Math.floor(Math.random() * backgroundColors.length);
+		
+			brick = new Game.Brick(x, y, brickWidth, brickHeight, backgroundColors[rand], '#333333'); //colors[rand]);
+			
+			//var brickID = "brickId"+i;
+			//brick.node.id = brickID;
+			//bricks[brickID] = brick;
+			bricks.push(brick);
+			
+			//calculate next x position	
+			x = (column * brickWidth);
+			column++;
+			
+			if(x >= Game.Canvas.width){
+				//move bricks down
+				y = row * brickHeight;
+				row++;
+				
+				//reset x for new layer
+				x = 0;
+				column = 1;
+			}	
 		}
 		
+		return bricks;
+	};
+	
+	return module;
+})();
 
-/*
-		if(elementOnTop !== null && elementOnTop != this.node){
-			this.stop();
-			
-			console.log(elementOnTop.id);
-			
-			bricks[elementOnTop.id].remove();
-										
-			bricks[elementOnTop.id].animate({ "fill-opacity":0, "stroke-opacity":0, width:BRICKWIDTH*2, height:BRICKHEIGHT*2 }, 500, 
-				function(){ 
-					this.remove(); 
-				}
-			);
-			//send ball back in opposite direction
-			angle += 45; 
-					
-			ball.animate({cx: 400, cy: 400}, 1000);
-			
-		}*/
-	}
-);
+//should probably be a factory since it generates so many objects
+Game.Brick = function(x, y, width, height, backgroundColor, strokeColor){
+	var brick = Game.Canvas.paper.rect(x, y, width, height);
+	brick.attr({fill: backgroundColor, stroke: strokeColor, "fill-opacity": 1, "stroke-width": 1}).toFront();
+	
+	return brick;
+};
+
+Game.run();
