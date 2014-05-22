@@ -4,6 +4,7 @@
  * -pause (wow, that sounds difficult)
  * -opening screen
  * -keeping score
+ * -if doing touch controls, make the whole canvas responsive to the screen size
  * -lives/chances...maybe infinite lives, every time you die the ball gets slower, as you go from level to level it increases in speed
  * -less garish colors for bricks
  */
@@ -14,23 +15,6 @@ var Game = (function(){
 	var bricks;
 	var paddle;
 	var ballAnimationTime = 1500;
-	
-	//borrowed from github project
-	/*function rectangleIntersectsCircle(theRectangle, theCircle) {
-		var distanceX = Math.abs(theCircle.attr('cx') - theRectangle.attr('x') - theRectangle.attr('width')/2);
-		var distanceY = Math.abs(theCircle.attr('cy') - theRectangle.attr('y') - theRectangle.attr('height')/2);
-	
-		if (distanceX > (theRectangle.attr('width')/2 + theCircle.attr('r'))) { return false; }
-		if (distanceY > (theRectangle.attr('height')/2 + theCircle.attr('r'))) { return false; }
-	
-		if (distanceX <= (theRectangle.attr('width')/2)) { return true; } 
-		if (distanceY <= (theRectangle.attr('height')/2)) { return true; } 
-	
-		var cornerDistance_sq = Math.pow((distanceX - theRectangle.attr('width')/2), 2) +
-								Math.pow((distanceY - theRectangle.attr('height')/2), 2);
-	
-		return (cornerDistance_sq <= Math.pow(theCircle.r, 2));
-	}*/
 	
 	function isCircleCenterInsideRectangle(circle, rectangle) {
 		return (circle.attr('cx') >= rectangle.attr('x')
@@ -138,9 +122,6 @@ Game.Canvas = (function(){
 		
 			brick = new Game.Brick(x, y, brickWidth, brickHeight, backgroundColors[rand], '#333333'); //colors[rand]);
 			
-			//var brickID = "brickId"+i;
-			//brick.node.id = brickID;
-			//bricks[brickID] = brick;
 			bricks.push(brick);
 			
 			//calculate next x position	
