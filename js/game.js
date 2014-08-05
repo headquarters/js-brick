@@ -2,10 +2,9 @@
  * TODO:
  * -mouse movement, keyboard control, and touch control on the paddle the paddle
  * -pause (wow, that sounds difficult)
- * -opening screen
  * -keeping score
  * -if doing touch controls, make the whole canvas responsive to the screen size
- * -lives/chances...maybe infinite lives, every time you die the ball gets slower, as you go from level to level it increases in speed
+ * -lives/chances...maybe infinite lives, every time you die the ball gets slower, as you go from level to level it increases in speed?
  * -less garish colors for bricks
  */
 var Game = (function(){
@@ -23,49 +22,77 @@ var Game = (function(){
 				&& circle.attr('cy') < (rectangle.attr('y') + rectangle.attr('height')));
 	}
 	
+	function keyboardHandler(e){
+		var keycode = e.which;
+		
+		if (keycode == 27) {
+			module.pause();
+		}
+	}
+	
 	
 	module.run = function(){
 		Game.Canvas.create();
 		
 		ball = Game.Canvas.paper.circle(Game.Canvas.width / 2, Game.Canvas.height - 45, 12);
-		ball.attr({fill: 'red', stroke: '#666', "fill-opacity": 1, "stroke-width": 2});
+		ball.attr({fill: '#666666', stroke: '#666', "fill-opacity": 1, "stroke-width": 2});
 		
-		paddle = Game.Canvas.paper.rect((Game.Canvas.width/2 - 80), (Game.Canvas.height - (10 * 3)), 100, 20);
-		paddle.attr({ fill: "#CCCCCC" });
+		paddle = Game.Canvas.paper.rect((Game.Canvas.width/2 - 50), (Game.Canvas.height - (10 * 3)), 100, 20);
+		paddle.attr({ fill: "#7471BD" });
 		
 		bricks = Game.Canvas.placeBricks();
 		
-		module.startBall();
+		$(document).keyup(keyboardHandler);
+		
+		$('#start').on('click', module.startGame);
+		
+		//module.startBall();
+	};
+	
+	module.startGame = function(){
+		$('.overlay').hide();
+		
+		module.startBall();		
 	};
 	
 	module.startBall = function(){
+		//TODO: how to resume ball moving after Pause? need to save its current target somewhere
 		ball.animate({cx: 400, cy: 0}, ballAnimationTime);
 		
+		//returns angle between ball center and second point
 		var angle = Raphael.angle(ball.attr("cx"), ball.attr("cy"), 400, 20);
-		
+		console.log(angle);
 		var flag;
-		
+				
 		//crude hit detection
 		ball.onAnimation(
 			function(){
-				//getElementsByPoint() slows the animation down a LOT
-				//var elementsAtCurrentPoint = Game.Canvas.paper.getElementsByPoint(this.attr("cx"), this.attr("cy"));
-				
 				//cx and cy are point in center of circle...needs to be checking edge of circle
 				var cx = this.attr("cx");
 				var cy = this.attr("cy");
 				
-			
+				//ball hits edge of canvas
+				if (cx == 0 ||	cy == 0) {
+					angle += 45;
+					ball.stop().animate({cx: 400, cy: 0}, ballAnimationTime);
+				}
+				
+				//Tried getElementsByPoint(), but it slows the animation down a LOT;
 				//looping over every brick also slows the animation down a LOT,
 				//but manual calculation is perceptually faster than calling isPointInside()
-				for(var brick in bricks){
-					flag = isCircleCenterInsideRectangle(this, bricks[brick]);
+				//inspired by Raphael Platformer from >>>>URL<<<<<<
+				for(var index = 0; index < bricks.length; index++){
+					flag = isCircleCenterInsideRectangle(this, bricks[index]);
 					
 					if (flag) {
-						//circle has hit a brick
-						bricks[brick].animate({ "fill-opacity":0, "stroke-opacity":0, width:80, height:40 }, 500, 
-							function(){ 
-								this.remove(); 
+						//ball has hit a brick
+						bricks[index].animate({ "fill-opacity":0, "stroke-opacity":0, width:80, height:40 }, 500, 
+							function(){
+								//remove element from array
+								bricks.splice(index, 1);
+								
+								//remove element from canvas
+								this.remove();								
 							}
 						);
 						
@@ -73,18 +100,42 @@ var Game = (function(){
 						
 						//shouldn't animation time frame depend on length of distance to cover?
 						//i.e. increase timespan for animate as length increases so speed remains constant
-						ball.animate({cx: 400, cy: Game.Canvas.height}, ballAnimationTime);
+						ball.stop().animate({cx: 400, cy: Game.Canvas.height}, ballAnimationTime);
 						//ball.stop();
 					} 
 				}
-				
 				//if ball hits paddle, return in opposite direction...
+				flag = isCircleCenterInsideRectangle(this, paddle);
+				
+				if (flag) {
+					//ball has hit the paddle
+					console.log("hit the paddle");
+					angle += 45;
+					ball.stop().animate({cx: 400, cy: 0}, ballAnimationTime);
+				}
 				
 				//if bricks are empty, game is won...
+				if (bricks.length == 0) {
+					alert('You won!');
+					ball.stop();
+				}
 				
 				//if ball hits bottom of canvas, user loses a life...or something happens...
+				if (cx == Game.Canvas.width || cy == Game.Canvas.height) {
+					alert('You lost. :(');
+					ball.stop();
+				}
 			}
 		);
+	};
+	
+	module.pause = function(){
+		$('#start').text("Resume");
+		
+		//show pause screen
+		$('.overlay').show();
+		
+		ball.stop();
 	};
 	
 	return module;	
@@ -93,7 +144,7 @@ var Game = (function(){
 Game.Canvas = (function(){
 	var module = {};
 	
-	var backgroundColors = ['#E54661', '#FFA644', '#998A2F', '#2C594F', '#002D40'];
+	var backgroundColors = ['#82beda', '#6ee699', '#fff700', '#ffb757', '#e67f97'];
 	//var colors = ['#61571E', '#A86E2D', '#19332D', '#872939', '#003045'];
 	
 	var brickWidth = 40;

@@ -22,15 +22,21 @@
         
         <!-- CSS : implied media="all" -->
         <link rel="stylesheet" href="css/normalize.css">
-        <link rel="stylesheet" href="css/global.css">        
+        <link rel="stylesheet" href="css/game.css">        
     </head>
     <body>        
         <div id="container">
-
+			<div id="start-screen-overlay" class="overlay"></div>
+			<div id="start-screen-controls" class="overlay">
+				<strong>Controls</strong> <br />
+				Left (&larr;) and Right (&rarr;) keys control the paddle. <br />
+				Press Escape to Pause. <br />
+				<button id="start">Start</button>
+			</div>
         </div> <!-- end of #container -->
    
         <script src="js/jquery-1.9.1.min.js"></script>
         <script src="js/raphael-min.js"></script>
-        <script src="js/global.js"></script>
+        <script src="js/game.js"></script>
     </body>
 </html>
